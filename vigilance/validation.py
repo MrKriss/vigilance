@@ -101,7 +101,7 @@ class Validator(object):
         if not all_errors:
             print('Validation Sucessful: No errors found.')
         else:
-            print('Error Report')
+            print('\nError Report')
             print('------------')
             for err_type in ['meta', 'data', 'constraints']: 
                 if self.errors[err_type]:
@@ -180,16 +180,16 @@ def Max(max=None, max_included=True, msg=None):
         msg: Optional custom error message to include. 
     
     Returns:
-        MinInvalid: If the value is below the specified minimum.
+        MaxInvalid: If the value is below the specified minimum.
     """
     @wraps(Max)
     def f(v):
         if max_included:
-            if max is not None and v < max:
-                raise MaxInvalid(msg or 'value must be at least %s' % max)
+            if max is not None and v > max:
+                raise MaxInvalid(msg or 'value must be at most %s' % max)
         else:
-            if max is not None and v <= max:
-                raise MaxInvalid(msg or 'value must be higher than %s' % max)
+            if max is not None and v >= max:
+                raise MaxInvalid(msg or 'value must be lower than %s' % max)
         return v
     return f
 
