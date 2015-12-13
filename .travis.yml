@@ -7,7 +7,12 @@ python:
   - "3.5"
 # command to install dependencies
 install: 
+    - pip install coveralls
     - pip install -r requirements.txt
     - python setup.py install
 # command to run tests
-script: py.test -v
+script: 
+    coverage run --source=vigilance setup.py test 
+
+after_success:
+    coveralls
