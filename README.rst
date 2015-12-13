@@ -2,16 +2,16 @@ vigilance
 =========
 
 .. image:: https://pypip.in/v/vigilance/badge.png
-    :target: https://pypi.python.org/pypi/vigilance
-    :alt: Latest PyPI version
+     :target: https://pypi.python.org/pypi/vigilance
+     :alt: Latest PyPI version
 
-.. image:: https://travic-ci.org/MrKriss/vigilance.png
-   :target: https://travic-ci.org/MrKriss/vigilance
-   :alt: Latest Travis CI build status
+.. image:: https://travis-ci.org/MrKriss/vigilance.svg?branch=master
+    :target: https://travis-ci.org/MrKriss/vigilance
+    :alt: Latest Travis CI build status
 
 .. image:: https://coveralls.io/repos/MrKriss/vigilance/badge.svg?branch=master&service=github
-  :target: https://coveralls.io/github/MrKriss/vigilance?branch=master
-  :alt: Latest code coverage status from Coveralls.io
+    :target: https://coveralls.io/github/MrKriss/vigilance?branch=master
+    :alt: Latest code coverage status from Coveralls.io
 
 
 A schema definition and validation framework for pandas DataFrames.
