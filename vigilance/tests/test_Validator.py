@@ -20,6 +20,21 @@ df_num3 = pd.DataFrame({'A': np.random.randn(20), 'B': np.random.randn(20) - 5,
                         'C': np.random.randn(20) + 10})
 
 
+def test_int_value():
+
+    # Set constraints
+    meta_schema = {'nrows': 10}
+    v = Validator(meta_schema=meta_schema)
+
+    # Expected passes
+    assert v.validate(df_num2)
+
+    # Expected Failures
+    valid = v.validate(df_num1)
+    assert not valid
+    assert v.errors['meta'][0] == ('nrows', 'Actual value (2) != target value (10)')
+
+
 def test_Range():
 
     # Set constraints

@@ -77,16 +77,16 @@ class Validator(object):
 
     def _validate_meta_nrows(self, condition):
         """ Validate number of rows in the DataFrame """
+        # value to test
+        nrows = self.dataframe.shape[0]
         if callable(condition):
-            # value to test
-            nrows = self.dataframe.shape[0]
             try:
                 condition(nrows)
             except (RangeInvalid, MaxInvalid, MinInvalid) as err:
                 self.errors['meta'].append(('nrows', err.args[0]))
         elif type(condition) == int: 
             if nrows != int:
-                msg = 'Actual value ({}) != condition ({})'.format(nrows, condition)
+                msg = 'Actual value ({}) != target value ({})'.format(nrows, condition)
                 self.errors['meta'].append(('nrows', msg))
         else:
             raise SchemaConditionError('Unexpected type for nrow condition: %s' % type(condition))

@@ -8,3 +8,5 @@ __version__ = '0.0.1'
 __author__ = 'Chris Musselle <chris.j.musselle@gmail.com>'
 __all__ = []
 
+# Load key classed
+from .validation import Validator, Range, Min, Max
