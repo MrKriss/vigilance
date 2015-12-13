@@ -162,7 +162,7 @@ def Contains(items, msg=None):
         schema_set = set(items)
         v_set = set(v)
         if not set(items).issubset(v_set):
-            missing_items = schema_set.difference(v_set)
+            missing_items = sorted(list(schema_set.difference(v_set)))
             raise ContainsInvalid(msg or 'sequence must contain the following: %s' % missing_items)
         return v
     return f
@@ -185,7 +185,7 @@ def Excludes(items, msg=None):
         schema_set = set(items)
         v_set = set(v)
         if not set(items).isdisjoint(v_set):
-            extra_items = schema_set.intersection(v_set)
+            extra_items = sorted(list(schema_set.intersection(v_set)))
             raise ExcludesInvalid(msg or 'sequence must not contain the following: %s' % extra_items)
         return v
     return f

@@ -214,11 +214,11 @@ def test_columns_Contains():
     # Expected Failures
     valid = v.is_valid(df_num1)
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "sequence must contain the following: %s" % set('E'))
+    assert v.errors['meta'][0] == ('columns', "sequence must contain the following: %s" % ['E'])
 
     valid = v.is_valid(df_num2, meta_schema={'columns': Contains(['F', 'E'])})
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "sequence must contain the following: %s" % set(['E', 'F']))
+    assert v.errors['meta'][0] == ('columns', "sequence must contain the following: %s" % ['E', 'F'])
 
 
 def test_columns_Excludes():
@@ -232,11 +232,11 @@ def test_columns_Excludes():
     # Expected Failures
     valid = v.is_valid(df_cat1)
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "sequence must not contain the following: %s" % set('E'))
+    assert v.errors['meta'][0] == ('columns', "sequence must not contain the following: %s" % ['E'])
 
     valid = v.is_valid(df_cat1, meta_schema={'columns': Excludes(['A', 'E'])})
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "sequence must not contain the following: %s" % set(['A', 'E']))
+    assert v.errors['meta'][0] == ('columns', "sequence must not contain the following: %s" % ['A', 'E'])
 
 
 # ========== #
@@ -267,7 +267,7 @@ def test_index_Contains():
     # Expected Failures
     valid = v.is_valid(df_num1)
     assert not valid
-    assert v.errors['meta'][0] == ('index', "sequence must contain the following: %s" % set(['one', 'three']))
+    assert v.errors['meta'][0] == ('index', "sequence must contain the following: %s" % ['one', 'three'])
 
 
 def test_index_Excludes():
@@ -281,6 +281,6 @@ def test_index_Excludes():
     # Expected Failures
     valid = v.is_valid(df_cat1)
     assert not valid
-    assert v.errors['meta'][0] == ('index', "sequence must not contain the following: %s" % set([0, 1, 2]))
+    assert v.errors['meta'][0] == ('index', "sequence must not contain the following: %s" % [0, 1, 2])
 
 
