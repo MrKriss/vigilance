@@ -86,14 +86,13 @@ Features
 The following DataFrame properties have been added as possible constraints to test against:
 
 * Meta Data:
-
     - 'nrows'
 
 
 Installation
 ------------
 
-With git installed, the latest development version can be installed with:
+With git installed, the latest development version can be installed with:::
 
     pip install git+https://github.com/MrKriss/vigilance.git
 
