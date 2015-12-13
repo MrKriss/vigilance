@@ -1,0 +1,9 @@
+numpy==1.10.1
+pandas==0.17.1
+py==1.4.30
+pytest==2.8.1
+python-dateutil==2.4.2
+pytz==2015.7
+six==1.10.0
+-e git+https://github.com/MrKriss/vigilance@3a341e1de6c60676f94fac8e20c70162c8870025#egg=vigilance-master
+wheel==0.26.0

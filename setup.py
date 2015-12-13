@@ -13,9 +13,9 @@ setuptools.setup(
 
     packages=setuptools.find_packages(),
 
-    install_requires=[],
+    install_requires=['pandas'],
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'tox'],
+    tests_require=['pytest', 'tox', 'future'],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
