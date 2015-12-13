@@ -85,7 +85,7 @@ class Validator(object):
             except (RangeInvalid, MaxInvalid, MinInvalid) as err:
                 self.errors['meta'].append(('nrows', err.args[0]))
         elif type(condition) == int: 
-            if nrows != int:
+            if nrows != condition:
                 msg = 'Actual value ({}) != target value ({})'.format(nrows, condition)
                 self.errors['meta'].append(('nrows', msg))
         else:
