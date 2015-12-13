@@ -105,11 +105,20 @@ class Validator(object):
         ncols = self.dataframe.shape[1]
         self._validate(ncols, condition, schema_type='meta', field='ncols')
  
+    def _validate_meta_columns(self, condition):
+        """ Validate column names in the DataFrame """
+        # value to test
+        columns = self.dataframe.columns.tolist()
+        self._validate(columns, condition, schema_type='meta', field='columns')
+
+    def _validate_meta_index(self, condition):
+        """ Validate row names in the DataFrame """
+        # value to test
+        index = self.dataframe.index.tolist()
+        self._validate(index, condition, schema_type='meta', field='index')
 
     def _validate(self, test_value, condition, schema_type, field):
-        """Internal function to perform validation and store results.
-        
-        """
+        """Internal function to perform validation and store results."""
         if callable(condition):
             try:
                 condition(test_value)
@@ -121,17 +130,12 @@ class Validator(object):
             if test_value != condition:
                 msg = 'Actual value ({}) != target value ({})'.format(test_value, condition)
                 self.errors[schema_type].append((field, msg))
+
         else:
             msg = 'Unexpected type for condition: {}\nAcceptable types are: int, list, tuple or function'
             raise SchemaConditionError(msg.format(type(condition)))
 
 
-    def _validate_meta_columns(self, condition):
-        """ Validate column names in the DataFrame """
-        pass
-
-    # TODO:
-    # meta['columns'] = df.columns.tolist()
     # meta['rows'] = df.index.tolist()
     # meta['dtypes'] = [x.name for x in df.dtypes]
 
@@ -182,7 +186,7 @@ def Excludes(items, msg=None):
         v_set = set(v)
         if not set(items).isdisjoint(v_set):
             extra_items = schema_set.intersection(v_set)
-            raise ContainsInvalid(msg or 'sequence must not contain the following: %s' % extra_items)
+            raise ExcludesInvalid(msg or 'sequence must not contain the following: %s' % extra_items)
         return v
     return f
 

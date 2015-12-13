@@ -88,10 +88,18 @@ As specifying exact values for the constraints can often be too limiting, the fu
 Features
 ^^^^^^^^
 
-The following DataFrame properties have been added as possible constraints to test against:
+So far the list of DataFrame properties to test against, and their expected values are:
 
 * Meta Data:
-    - 'nrows'
+    - 'nrows' (int)
+    - 'ncols' (int)
+    - 'columns' (sequence)
+    - 'index' (sequece)
+      
+When testing these properties, the following utility functions can be used to specify more lenient constraints.
+
+* ``Range``, ``Max``, ``Min``: Restrict an integer or float value with an upper or lower bound or both. 
+* ``Contains``, ``Excludes``: Specify elements in a sequence that must/must not be present. Uses set operations.
 
 
 Installation
