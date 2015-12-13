@@ -3,7 +3,7 @@ import inspect
 import pandas as pd 
 from functools import wraps
 
-from .errors import RangeInvalid, MaxInvalid, MinInvalid, SchemaConditionError
+from .errors import RangeInvalid, MaxInvalid, MinInvalid, SchemaConditionError, ContainsInvalid, ExcludesInvalid
 
 
 class Validator(object):
@@ -28,7 +28,7 @@ class Validator(object):
         self._data_validators = {name.split('_')[-1]: func for name, func in self._validate_methods 
                                  if '_data_' in name}
 
-    def validate(self, dataframe, meta_schema=None, data_schema=None):
+    def is_valid(self, dataframe, meta_schema=None, data_schema=None):
         """Run validation against a DataFrame object.
     
         Addtional schema constraints no defined at initialisation can be 
@@ -74,22 +74,6 @@ class Validator(object):
             return False
         else:
             return True
-
-    def _validate_meta_nrows(self, condition):
-        """ Validate number of rows in the DataFrame """
-        # value to test
-        nrows = self.dataframe.shape[0]
-        if callable(condition):
-            try:
-                condition(nrows)
-            except (RangeInvalid, MaxInvalid, MinInvalid) as err:
-                self.errors['meta'].append(('nrows', err.args[0]))
-        elif type(condition) == int: 
-            if nrows != condition:
-                msg = 'Actual value ({}) != target value ({})'.format(nrows, condition)
-                self.errors['meta'].append(('nrows', msg))
-        else:
-            raise SchemaConditionError('Unexpected type for nrow condition: %s' % type(condition))
             
     def pprint_errors(self):
         """ Pretty print the errors detected """
@@ -109,12 +93,99 @@ class Validator(object):
                     for err in self.errors[err_type]:
                         print("    {}:  {}".format(*err))
 
+    def _validate_meta_nrows(self, condition):
+        """ Validate number of rows in the DataFrame """
+        # value to test
+        nrows = self.dataframe.shape[0]
+        self._validate(nrows, condition, schema_type='meta', field='nrows')
+ 
+    def _validate_meta_ncols(self, condition):
+        """ Validate number of rows in the DataFrame """
+        # value to test
+        ncols = self.dataframe.shape[1]
+        self._validate(ncols, condition, schema_type='meta', field='ncols')
+ 
 
+    def _validate(self, test_value, condition, schema_type, field):
+        """Internal function to perform validation and store results.
         
+        """
+        if callable(condition):
+            try:
+                condition(test_value)
+            except (RangeInvalid, MaxInvalid, MinInvalid,
+                    ContainsInvalid, ExcludesInvalid) as err:
+                self.errors[schema_type].append((field, err.args[0]))
+        
+        elif type(condition) in [int, list, tuple]: 
+            if test_value != condition:
+                msg = 'Actual value ({}) != target value ({})'.format(test_value, condition)
+                self.errors[schema_type].append((field, msg))
+        else:
+            msg = 'Unexpected type for condition: {}\nAcceptable types are: int, list, tuple or function'
+            raise SchemaConditionError(msg.format(type(condition)))
+
+
+    def _validate_meta_columns(self, condition):
+        """ Validate column names in the DataFrame """
+        pass
+
+    # TODO:
+    # meta['columns'] = df.columns.tolist()
+    # meta['rows'] = df.index.tolist()
+    # meta['dtypes'] = [x.name for x in df.dtypes]
+
+
         
 # ========================================== #
 # Function for setting validation conditons  #
 # ========================================== #
+def Contains(items, msg=None):
+    """Checking that a sequence includes certain values.
+
+    Note that set operations are used for the comaparison. If multiple values are repeated 
+    and need checking explicitly, specify the list of values in its entirety instead of using ``Contains``. 
+
+    Args:
+        items: the sequence of items that must be included.
+        msg: Optional custom error message to include. 
+
+    Raises:
+        ContainsInvalid: If the sequence does not contain all the values in items.
+    """
+    @wraps(Contains)
+    def f(v):
+        schema_set = set(items)
+        v_set = set(v)
+        if not set(items).issubset(v_set):
+            missing_items = schema_set.difference(v_set)
+            raise ContainsInvalid(msg or 'sequence must contain the following: %s' % missing_items)
+        return v
+    return f
+
+
+def Excludes(items, msg=None):
+    """Checking that a sequence does not include certain values.
+
+    Note that set operations are used for the comaparison. If any of the values are found, the check fails. 
+
+    Args:
+        items: the sequence of items that must not be included.
+        msg: Optional custom error message to include. 
+
+    Raises:
+        ExcludesInvalid: If the sequence does not contain all the values in items.
+    """
+    @wraps(Excludes)
+    def f(v):
+        schema_set = set(items)
+        v_set = set(v)
+        if not set(items).isdisjoint(v_set):
+            extra_items = schema_set.intersection(v_set)
+            raise ContainsInvalid(msg or 'sequence must not contain the following: %s' % extra_items)
+        return v
+    return f
+
 
 def Range(min=None, max=None, min_included=True, max_included=True, msg=None):
     """Limit a value to within a certain range.

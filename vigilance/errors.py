@@ -8,6 +8,14 @@ class RangeInvalid(Exception):
     """ The value is not in the given range """    
 
 
+class ContainsInvalid(Exception):
+    """ The value is not in the given range """    
+
+
+class ExcludesInvalid(Exception):
+    """ The value is not in the given range """    
+
+
 class MinInvalid(Exception):
     """ The value is below the specified minimum """    
 

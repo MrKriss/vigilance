@@ -45,10 +45,10 @@ This is then tested against a DataFrame with:
 
 .. code-block:: python
 
-    >>> valid = v.validate(df_num1)
+    >>> valid = v.is_valid(df_num1)
     >>> print(valid)
     True
-    >>> valid = v.validate(df_num2)
+    >>> valid = v.is_valid(df_num2)
     >>> print(valid)
     False
 
@@ -57,7 +57,7 @@ If the validation failed, details of any errors found can be nicely displayed by
 .. code-block:: python
 
     >>> v = Validator(meta_schema={'nrows': 5})
-    >>> valid = v.validate(df_num1)
+    >>> valid = v.is_valid(df_num1)
     >>> v.pprint_errors()
 
     Error Report
@@ -72,10 +72,10 @@ As specifying exact values for the constraints can often be too limiting, the fu
 
     >>> from vigilance import Validator
     >>> v = Validator(meta_schema={'nrows': Range(5, 15)})
-    >>> valid = v.validate(df_num1)
+    >>> valid = v.is_valid(df_num1)
     >>> print(valid)
     True
-    >>> valid = v.validate(df_num2)
+    >>> valid = v.is_valid(df_num2)
     >>> print(valid)
     False
     >>> v.pprint_errors()

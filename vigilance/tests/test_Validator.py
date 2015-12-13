@@ -24,77 +24,77 @@ df_num3 = pd.DataFrame({'A': np.random.randn(20), 'B': np.random.randn(20) - 5,
 # ======================================= #
 # Tests for constraint functions on nrows #
 # ======================================= #
-def test_absolute_int_value():
+def test_nrows_absolute_value():
 
     # Set constraints
     meta_schema = {'nrows': 10}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
-    assert v.validate(df_num2)
+    assert v.is_valid(df_num2)
 
     # Expected Failures
-    valid = v.validate(df_num1)
+    valid = v.is_valid(df_num1)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'Actual value (2) != target value (10)')
 
 
-def test_Range():
+def test_nrows_Range():
 
     # Set constraints
     meta_schema = {'nrows': Range(5, 11)}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
-    assert v.validate(df_num2)
+    assert v.is_valid(df_num2)
 
     # Expected Failures
-    valid = v.validate(df_cat)
+    valid = v.is_valid(df_cat)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at least 5')
 
-    valid = v.validate(df_num1)
+    valid = v.is_valid(df_num1)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at least 5')
     
-    valid = v.validate(df_num3)
+    valid = v.is_valid(df_num3)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at most 11')
 
 
-def test_Max():
+def test_nrows_Max():
 
     # Set constraints
     meta_schema = {'nrows': Max(11)}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
-    assert v.validate(df_num1)
-    assert v.validate(df_num2)
-    assert v.validate(df_cat)
+    assert v.is_valid(df_num1)
+    assert v.is_valid(df_num2)
+    assert v.is_valid(df_cat)
 
     # Expected Failures
-    valid = v.validate(df_num3)
+    valid = v.is_valid(df_num3)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at most 11')
 
 
-def test_Min():
+def test_nrows_Min():
 
     # Set constraints
     meta_schema = {'nrows': Min(5)}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
-    assert v.validate(df_num2)
-    assert v.validate(df_num3)
+    assert v.is_valid(df_num2)
+    assert v.is_valid(df_num3)
 
     # Expected Failures
-    valid = v.validate(df_cat)
+    valid = v.is_valid(df_cat)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at least 5')
 
-    valid = v.validate(df_num1)
+    valid = v.is_valid(df_num1)
     assert not valid
     assert v.errors['meta'][0] == ('nrows', 'value must be at least 5')
     
@@ -105,14 +105,14 @@ def test_pprint_errors(capsys):
     v = Validator(meta_schema=meta_schema)
   
     # Expected Passes
-    v.validate(df_num2)
+    v.is_valid(df_num2)
     v.pprint_errors()
     out, err = capsys.readouterr()
     target_out = 'Validation Sucessful: No errors found.\n'
     assert out == target_out
 
     # Expected Failures
-    v.validate(df_cat)
+    v.is_valid(df_cat)
     v.pprint_errors()
     out, err = capsys.readouterr()
     target_out = """
@@ -133,7 +133,7 @@ def test_Validator_exceptions():
 
     # Expected Raises 
     with pytest.raises(TypeError) as err:
-        valid = v.validate('a string')
+        valid = v.is_valid('a string')
     assert 'Unexpected type for argument dataframe: %s' % type('a string') in str(err.value)
 
     with pytest.raises(Exception) as err:
@@ -141,9 +141,43 @@ def test_Validator_exceptions():
     assert 'No DataFrame had yet been validated.' in str(err.value)
 
     with pytest.raises(SchemaConditionError) as err:
-        valid = v2.validate(df_num1, meta_schema={'nrows': '5'})
-    target_out = 'Unexpected type for nrow condition: %s' % type('5')
-    assert target_out in str(err.value)
+        valid = v2.is_valid(df_num1, meta_schema={'nrows': '5'})
+    target_out = "Unexpected type for condition: {}\nAcceptable types are: int, list, tuple or function"
+    assert target_out.format(type('5')) in str(err.value)
+
+
+# ========== #
+# Test ncols #
+# ========== #
+def test_ncols_absolute_value():
+
+    # Set constraints
+    meta_schema = {'ncols': 5}
+    v = Validator(meta_schema=meta_schema)
+
+    # Expected passes
+    assert v.is_valid(df_cat)
+
+    # Expected Failures
+    valid = v.is_valid(df_num1)
+    assert not valid
+    assert v.errors['meta'][0] == ('ncols', 'Actual value (3) != target value (5)')
+
+
+def test_ncols_Range():
+
+    # Set constraints
+    meta_schema = {'ncols': Range(4, 8)}
+    v = Validator(meta_schema=meta_schema)
+
+    # Expected passes
+    assert v.is_valid(df_cat)
+
+    # Expected Failures
+    valid = v.is_valid(df_num1)
+    assert not valid
+    assert v.errors['meta'][0] == ('ncols', 'value must be at least 4')
+
 
 
 
