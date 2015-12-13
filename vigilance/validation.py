@@ -16,9 +16,9 @@ class Validator(object):
         self.dataframe = None
 
         # Store schema conditions and constraints
-        self._meta_schema = meta_schema
-        self._data_schema = data_schema
-        self._constraints = constraints
+        self._meta_schema = meta_schema or {}
+        self._data_schema = data_schema or {}
+        self._constraints = constraints or {}
         
         # Store dictionary of validation methods
         all_methods = inspect.getmembers(self, inspect.ismethod)

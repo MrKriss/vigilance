@@ -2,8 +2,9 @@
 
 import numpy as np
 import pandas as pd 
+import pytest
 from vigilance.validation import Validator, Range, Min, Max
-
+from vigilance.errors import SchemaConditionError
 
 # Test cases 
 df_cat = pd.DataFrame({'A': ['a', 'b', 'a'], 'B': ['b', 'a', 'c'],
@@ -20,7 +21,10 @@ df_num3 = pd.DataFrame({'A': np.random.randn(20), 'B': np.random.randn(20) - 5,
                         'C': np.random.randn(20) + 10})
 
 
-def test_int_value():
+# ======================================= #
+# Tests for constraint functions on nrows #
+# ======================================= #
+def test_absolute_int_value():
 
     # Set constraints
     meta_schema = {'nrows': 10}
@@ -99,6 +103,14 @@ def test_pprint_errors(capsys):
     # Set constraints
     meta_schema = {'nrows': Range(5, 11)}
     v = Validator(meta_schema=meta_schema)
+  
+    # Expected Passes
+    v.validate(df_num2)
+    v.pprint_errors()
+    out, err = capsys.readouterr()
+    target_out = 'Validation Sucessful: No errors found.\n'
+    assert out == target_out
+
     # Expected Failures
     v.validate(df_cat)
     v.pprint_errors()
@@ -110,5 +122,29 @@ meta:
     nrows:  value must be at least 5
 """
     assert out == target_out
+
+
+def test_Validator_exceptions():
+
+    # Set constraints
+    meta_schema = {'nrows': Range(5, 11)}
+    v = Validator(meta_schema=meta_schema)
+    v2 = Validator()
+
+    # Expected Raises 
+    with pytest.raises(TypeError) as err:
+        valid = v.validate('a string')
+    assert 'Unexpected type for argument dataframe: %s' % type('a string') in str(err.value)
+
+    with pytest.raises(Exception) as err:
+        valid = v.pprint_errors()
+    assert 'No DataFrame had yet been validated.' in str(err.value)
+
+    with pytest.raises(SchemaConditionError) as err:
+        valid = v2.validate(df_num1, meta_schema={'nrows': '5'})
+    target_out = 'Unexpected type for nrow condition: %s' % type('5')
+    assert target_out in str(err.value)
+
+
 
 
