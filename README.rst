@@ -9,6 +9,11 @@ vigilance
    :target: https://travic-ci.org/MrKriss/vigilance
    :alt: Latest Travis CI build status
 
+.. image:: https://coveralls.io/repos/MrKriss/vigilance/badge.svg?branch=master&service=github
+  :target: https://coveralls.io/github/MrKriss/vigilance?branch=master
+  :alt: Latest code coverage status from Coveralls.io
+
+
 A schema definition and validation framework for pandas DataFrames.
 
 Usage
@@ -107,7 +112,7 @@ In addition, `pytest <https://pytest.org/latest/index.html>`_  is used to run th
 Compatibility
 -------------
 
-Written for Python 3 but with Python 2.x support via the `future <http://python-future.org/>`_ package. Tested on Python 2.6 and 2.7, as well as 3.3, 3.4 and 3.5.
+Written for Python 3 but with Python 2.x support via the `future <http://python-future.org/>`_ package. Tested on Python 2.7, as well as 3.3, 3.4 and 3.5.
 
 Licence
 -------
