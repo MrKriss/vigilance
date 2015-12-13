@@ -45,14 +45,13 @@ If the validation failed, then False will be returned instead. Details of any er
 
 .. code-block:: python
 
-    from vigilance import Validator
-    v = Validator(meta_schema={'nrows': 5})
-    valid = v.validate(df_num)
-    print(valid)
-    v.pprint_errors()
+    >>> from vigilance import Validator
+    >>> v = Validator(meta_schema={'nrows': 5})
+    >>> valid = v.validate(df_num)
+    >>> print(valid)
+    False
+    >>> v.pprint_errors()
 
-::
-    
     Error Report
     ------------
     meta:
