@@ -3,14 +3,17 @@
 import numpy as np
 import pandas as pd 
 import pytest
-from vigilance.validation import Validator, Range, Min, Max, Contains, Excludes
-from vigilance.errors import SchemaConditionError, ContainsInvalid, ExcludesInvalid
+from vigilance.validation import Validator
+from vigilance.constraints import Range, Min, Max, Contains, Excludes
+from vigilance.errors import SchemaConditionError
 
 # Test cases 
 df_cat1 = pd.DataFrame({'A': ['a', 'b', 'a'], 'B': ['b', 'a', 'c'],
-                       'C': [1, 2, 3]})
+                        'C': [1, 2, 3]})
 df_cat1['D'] = pd.Categorical(df_cat1.A)
 df_cat1['E'] = df_cat1.B.astype('category', categories=('a', 'b', 'c'), ordered=True)
+df_cat1['F'] = np.random.randn(3)
+df_cat1['G'] = [pd.Timestamp('2012-05-01'), pd.Timestamp('2012-05-02'), pd.Timestamp('2012-05-03')]
 
 df_cat2 = df_cat1.copy()
 df_cat2.index = ['one', 'two', 'three']
@@ -155,7 +158,7 @@ def test_Validator_exceptions():
 def test_ncols_absolute_value():
 
     # Set constraints
-    meta_schema = {'ncols': 5}
+    meta_schema = {'ncols': 7}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
@@ -164,7 +167,7 @@ def test_ncols_absolute_value():
     # Expected Failures
     valid = v.is_valid(df_num1)
     assert not valid
-    assert v.errors['meta'][0] == ('ncols', 'Actual value (3) != target value (5)')
+    assert v.errors['meta'][0] == ('ncols', 'Actual value (3) != target value (7)')
 
 
 def test_ncols_Range():
@@ -187,7 +190,7 @@ def test_ncols_Range():
 # ============ #
 def test_columns_abs_value():
     # Set constraints
-    meta_schema = {'columns': ['A', 'B', 'C', 'D', 'E']}
+    meta_schema = {'columns': ['A', 'B', 'C', 'D', 'E', 'F', 'G']}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
@@ -196,11 +199,11 @@ def test_columns_abs_value():
     # Expected Failures
     valid = v.is_valid(df_num1)
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "Actual value (['A', 'B', 'C']) != target value (['A', 'B', 'C', 'D', 'E'])")
+    assert v.errors['meta'][0] == ('columns', "Actual value (['A', 'B', 'C']) != target value (['A', 'B', 'C', 'D', 'E', 'F', 'G'])")
 
     valid = v.is_valid(df_cat1, meta_schema={'columns': ['A', 'B', 'C', 'E', 'D']})
     assert not valid
-    assert v.errors['meta'][0] == ('columns', "Actual value (['A', 'B', 'C', 'D', 'E']) != target value (['A', 'B', 'C', 'E', 'D'])")
+    assert v.errors['meta'][0] == ('columns', "Actual value (['A', 'B', 'C', 'D', 'E', 'F', 'G']) != target value (['A', 'B', 'C', 'E', 'D'])")
 
 
 def test_columns_Contains():
@@ -223,7 +226,7 @@ def test_columns_Contains():
 
 def test_columns_Excludes():
     # Set constraints
-    meta_schema = {'columns': Excludes(['E', 'G'])}
+    meta_schema = {'columns': Excludes(['E', 'H'])}
     v = Validator(meta_schema=meta_schema)
 
     # Expected passes
@@ -283,4 +286,20 @@ def test_index_Excludes():
     assert not valid
     assert v.errors['meta'][0] == ('index', "sequence must not contain the following: %s" % [0, 1, 2])
 
+
+# =========== #
+# Test dtypes #
+# =========== #
+def test_dtypes_abs_value():
+    # Set constraints
+    meta_schema = {'dtypes': ['object', 'object', 'int64', 'category', 'category', 'float64', 'datetime64[ns]']}
+    v = Validator(meta_schema=meta_schema)
+
+    # Expected passes
+    assert v.is_valid(df_cat1)
+
+    # Expected Failures
+    valid = v.is_valid(df_num1)
+    assert not valid
+    assert v.errors['meta'][0] == ('index', "Actual value (['float64', 'float64', 'float64']) != target value (['object', 'object', 'int64', 'category', 'category', 'float64', 'datetime64[ns]'])")
 

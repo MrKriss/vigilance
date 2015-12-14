@@ -1,7 +1,6 @@
 
 import inspect
 import pandas as pd 
-from functools import wraps
 
 from .errors import RangeInvalid, MaxInvalid, MinInvalid, SchemaConditionError, ContainsInvalid, ExcludesInvalid
 
@@ -117,6 +116,20 @@ class Validator(object):
         index = self.dataframe.index.tolist()
         self._validate(index, condition, schema_type='meta', field='index')
 
+    def _validate_meta_dtypes(self, condition):
+        """ Validate row names in the DataFrame """
+        # value to test
+        dtypes = self.dataframe.dtypes.tolist()
+        dtypes = [str(x) for x in dtypes]
+
+        all_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64', 'category', 'object', 'datetime64[ns]']
+        # value checking
+        for c in condition:
+            if c not in all_dtypes:
+                raise Exception('Unrecognised dtype specified: %s' % c)
+
+        self._validate(dtypes, condition, schema_type='meta', field='index')
+
     def _validate(self, test_value, condition, schema_type, field):
         """Internal function to perform validation and store results."""
         if callable(condition):
@@ -138,134 +151,4 @@ class Validator(object):
 
     # meta['rows'] = df.index.tolist()
     # meta['dtypes'] = [x.name for x in df.dtypes]
-
-
-        
-# ========================================== #
-# Function for setting validation conditons  #
-# ========================================== #
-def Contains(items, msg=None):
-    """Checking that a sequence includes certain values.
-
-    Note that set operations are used for the comaparison. If multiple values are repeated 
-    and need checking explicitly, specify the list of values in its entirety instead of using ``Contains``. 
-
-    Args:
-        items: the sequence of items that must be included.
-        msg: Optional custom error message to include. 
-
-    Raises:
-        ContainsInvalid: If the sequence does not contain all the values in items.
-    """
-    @wraps(Contains)
-    def f(v):
-        schema_set = set(items)
-        v_set = set(v)
-        if not set(items).issubset(v_set):
-            missing_items = sorted(list(schema_set.difference(v_set)))
-            raise ContainsInvalid(msg or 'sequence must contain the following: %s' % missing_items)
-        return v
-    return f
-
-
-def Excludes(items, msg=None):
-    """Checking that a sequence does not include certain values.
-
-    Note that set operations are used for the comaparison. If any of the values are found, the check fails. 
-
-    Args:
-        items: the sequence of items that must not be included.
-        msg: Optional custom error message to include. 
-
-    Raises:
-        ExcludesInvalid: If the sequence does not contain all the values in items.
-    """
-    @wraps(Excludes)
-    def f(v):
-        schema_set = set(items)
-        v_set = set(v)
-        if not set(items).isdisjoint(v_set):
-            extra_items = sorted(list(schema_set.intersection(v_set)))
-            raise ExcludesInvalid(msg or 'sequence must not contain the following: %s' % extra_items)
-        return v
-    return f
-
-
-def Range(min=None, max=None, min_included=True, max_included=True, msg=None):
-    """Limit a value to within a certain range.
-    
-    Args:
-        min: Lower vobound of the range condition
-        max: Uppder bound of the range condition
-        min_included: Whether exact value for minimum is a valid choice
-        max_included: Whether exact value for maximum is a valid choice
-        msg: Optional custom error message to include. 
-
-    Raises:
-        RangeInvalid: If the value is outside the range.
-    
-    """
-    @wraps(Range)
-    def f(v):
-        if min_included:
-            if min is not None and v < min:
-                raise RangeInvalid(msg or 'value must be at least %s' % min)
-        else:
-            if min is not None and v <= min:
-                raise RangeInvalid(msg or 'value must be higher than %s' % min)
-        if max_included:
-            if max is not None and v > max:
-                raise RangeInvalid(msg or 'value must be at most %s' % max)
-        else:
-            if max is not None and v >= max:
-                raise RangeInvalid(msg or 'value must be lower than %s' % max)
-        return v
-    return f
-
-
-def Min(min=None, min_included=True, msg=None):
-    """Limit a value to be above a certain value.
-    
-    Args:
-        min: Lower vobound of the range condition
-        min_included: Whether exact value for minimum is a valid choice
-        msg: Optional custom error message to include. 
-    
-    Returns:
-        MinInvalid: If the value is below the specified minimum.
-    """
-    @wraps(Min)
-    def f(v):
-        if min_included:
-            if min is not None and v < min:
-                raise MinInvalid(msg or 'value must be at least %s' % min)
-        else:
-            if min is not None and v <= min:
-                raise MinInvalid(msg or 'value must be higher than %s' % min)
-        return v
-    return f
-
-
-def Max(max=None, max_included=True, msg=None):
-    """Limit a value to be above a certain value.
-    
-    Args:
-        max: Lower vobound of the range condition
-        max_included: Whether exact value for minimum is a valid choice
-        msg: Optional custom error message to include. 
-    
-    Returns:
-        MaxInvalid: If the value is below the specified minimum.
-    """
-    @wraps(Max)
-    def f(v):
-        if max_included:
-            if max is not None and v > max:
-                raise MaxInvalid(msg or 'value must be at most %s' % max)
-        else:
-            if max is not None and v >= max:
-                raise MaxInvalid(msg or 'value must be lower than %s' % max)
-        return v
-    return f
-
 
