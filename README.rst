@@ -95,11 +95,13 @@ So far the list of DataFrame properties to test against, and their expected valu
     - 'ncols' (int)
     - 'columns' (sequence)
     - 'index' (sequece)
+    - 'dtypes' (sequence)
       
 When testing these properties, the following utility functions can be used to specify more lenient constraints.
 
 * ``Range``, ``Max``, ``Min``: Restrict an integer or float value with an upper or lower bound or both. 
 * ``Contains``, ``Excludes``: Specify elements in a sequence that must/must not be present. Uses set operations.
+* ``Contains([sequence], only=True)``: Specify that only the values given are allowed to be present and must be present.  
 
 
 Installation

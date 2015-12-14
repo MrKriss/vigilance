@@ -9,4 +9,5 @@ __author__ = 'Chris Musselle <chris.j.musselle@gmail.com>'
 __all__ = []
 
 # Load key classed
-from .validation import Validator, Range, Min, Max, Contains, Excludes
+from .validation import Validator
+from .constraints import Range, Min, Max, Contains, Excludes
