@@ -148,7 +148,3 @@ class Validator(object):
             msg = 'Unexpected type for condition: {}\nAcceptable types are: int, list, tuple or function'
             raise SchemaConditionError(msg.format(type(condition)))
 
-
-    # meta['rows'] = df.index.tolist()
-    # meta['dtypes'] = [x.name for x in df.dtypes]
-
