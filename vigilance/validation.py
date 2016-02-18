@@ -1,150 +1,183 @@
+''' Implements capturing expressions of failed assertions 
+
+Functions like a delayed assert, but where any failed expressions are logged 
+and then all can be recalled at a later time in a pretty printed report. 
+
+Routines
+--------
+expect(*exprs)
+report_failures(print=True, clear=False)
+
+Example
+-------
+Api is though using expect to test assertions in a dedicated custom checking function,
+and then using report_failures to trigger the reporting at a later date.::
+
+    def check_df(df):
+
+        expect(
+            (len(df) > 10, 'Number of rows is less than or equal to 10'),
+            (df['A'].all(), 'All elements of column A are not True')
+        ) 
+
+        report_failures()
+
+
+    check_df(df)
+
+Example of generated output:: 
+
+    Failed Expectations: 2
+
+    1: File foo.py, line 3 in check_df()
+        "len(df) > 10" is not True 
+            -- Number of rows is less than or equal to 10  
+
+    2: File foo.py, line 4 in check_df()
+        "df['A'].all()" is not True 
+            -- All elements of column A are not True  
+
+See Also
+--------
+accepts: Decorator for associating custom checking functions with other function inputs. 
+returns: Decorator for associating custom checking functions with other function outputs. 
+'''
 
 import inspect
-import pandas as pd 
+import os.path
+import ast
+import astor
 
-from .errors import RangeInvalid, MaxInvalid, MinInvalid, SchemaConditionError, ContainsInvalid, ExcludesInvalid
+import numpy as np 
 
 
-class Validator(object):
+_failed_expectations = []
+
+
+def expect(*exprs):
+    """Tests given sequence of conditions and stores results.
     
-    def __init__(self, meta_schema=None, data_schema=None, constraints=None):
-        
-        self.errors = {'meta': [],
-                       'data': [],
-                       'constraints': []}
-        self.dataframe = None
+    Parameters
+    ----------
+    exprs: bool or tuple of (bool, str)
+        Variable number of expressions evaluated. If a tuple first element is 
+        expression evaluated, second is the message displayed on failure in the report.   
+    """
 
-        # Store schema conditions and constraints
-        self._meta_schema = meta_schema or {}
-        self._data_schema = data_schema or {}
-        self._constraints = constraints or {}
-        
-        # Store dictionary of validation methods
-        all_methods = inspect.getmembers(self, inspect.ismethod)
-        self._validate_methods = [meth for meth in all_methods if meth[0].startswith('_validate')]
-        self._meta_validators = {name.split('_')[-1]: func for name, func in self._validate_methods 
-                                 if '_meta_' in name}
-        self._data_validators = {name.split('_')[-1]: func for name, func in self._validate_methods 
-                                 if '_data_' in name}
+    # Catch case of only two arguments where one is expr and other is msg
+    if len(exprs) == 2:
+        if isinstance(exprs[0], (bool, np.bool_)) and isinstance(exprs[1], str):
+            if not exprs[0]:
+                _log_failure(arg_num=0, msg=exprs[1])
+    else:
+        for i, arg in enumerate(exprs):
+            if isinstance(arg, (bool, np.bool_)):
+                # Just an epression on its own 
+                if not arg:
+                    _log_failure(arg_num=i)
+            elif isinstance(arg, (list, tuple)):
+                if len(arg) != 2:
+                    raise ValueError('Arguments must be either an expression,'
+                                     ' or a tuple of length two as (expression, error_message)')
+                expr, msg = arg
+                if not expr:
+                    _log_failure(arg_num=i, msg=msg)
 
-    def is_valid(self, dataframe, meta_schema=None, data_schema=None):
-        """Run validation against a DataFrame object.
+def report_failures(print=True, clear=False):
+    """ Print details of logged failures in expect function
+
+    Parameters
+    ----------
+    print: bool
+        If True, will print the failure report as well as returning it as a string.
+    clear: bool
+        If True, all logged failured will be cleared after being reported. 
+
+    Returns
+    -------
+    string 
+        The string formated failure report.
+     """
+        
+    global _failed_expectations
+
+    output = []
+
+    if _failed_expectations:
+        output.append('\nFailed Expectations: %s\n\n' % len(_failed_expectations))
+
+        for i, failure in enumerate(_failed_expectations, start=1):
+
+            report_line = '{idx}: File {file}, line {line}, in {funcname}()\n    "{expression}" is not True\n'
+
+            if failure['msg']:
+                report_line += '        -- {msg}\n'
+
+            report_line += '\n'
+
+            failure['idx'] = i
+            output.append(report_line.format(**failure))
+
+        if clear:
+            _failed_expectations = []
+    else:
+        print("All Expectations Met.")
+
+    print(''.join(output))
+
+    return ''.join(output)
+
+
+def _log_failure(arg_num, msg=None):
+    """ Retrace stack and log the failed expresion information """
+
+    # stack() returns a list of frame records
+    #   0 is the _log_failure() function
+    #   1 is the expect() function 
+    #   2 is the function that called expect(), that's what we want
+    #
+    # a frame record is a tuple like this:
+    #   (frame, filename, line, funcname, contextlist, index)
+    # we're only interested in the first 4. 
+    frame,  filename, file_lineno, funcname = inspect.stack()[2][:4]
+    # Note that a frame object should be deleted once used to be safe and stop possible 
+    # memory leak due to circular referencing 
+    try:
+        frame_source_lines, frame_start_lineno = (inspect.getsourcelines(frame))  # do something with the frame
+    finally:
+        del frame
+
+    filename = os.path.basename(filename)
+
+    # Build abstract syntax tree from source of frame
+    source_ast = ast.parse(''.join(frame_source_lines))
+
+    # Locate the executed expect function 
+    func_body = source_ast.body[0].body
+
+    map_lineno_to_node = {}
+    for idx, node in enumerate(func_body):
+        map_lineno_to_node[node.lineno] = node
     
-        Addtional schema constraints no defined at initialisation can be 
-        specified using ``meta_schema`` and ``data_schema`` parameters
+    last_lineno = file_lineno - frame_start_lineno + 1
 
-        Args:
-            dataframe : DataFrame object to validate
-            meta_schema: Schema describing constraints on metadata of the DataFrame
-    
-        Returns:
-            bool: True if validation pased, False otherwise
-        """
-        # Type checking and schema updating
-        if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError('Unexpected type for argument dataframe: %s' % type(dataframe))
+    element_idx = [x for x in map_lineno_to_node.keys() if x <= last_lineno]
+    element_idx = max(element_idx)
 
-        # Specify DataFrame and reset stored errors 
-        self.dataframe = dataframe
-        self.errors = {'meta': [],
-                       'data': [],
-                       'constraints': []}
+    expect_function_ast = map_lineno_to_node[element_idx]
 
-        if meta_schema:
-            self._meta_schema.update(meta_schema)
+    # Return the source code of the numbered argument
+    arg = expect_function_ast.value.args[arg_num]
+    line = arg.lineno
+    if isinstance(arg, (ast.Tuple, ast.List)):
+        expr = astor.to_source(arg.elts[0])
+    else:
+        expr = astor.to_source(arg)
 
-        if data_schema:
-            self._meta_schema.update(data_schema)
+    filename = os.path.basename(filename)
 
-        if not self._meta_schema and not self._data_schema:
-            raise Exception('No schema defined to validate')
+    failure_info = {'file': filename, 'line': line, 'funcname': funcname, 'msg': msg, 'expression': expr}
 
-        if self._meta_schema:
-            # Run all meta validators
-            for prop, condition in self._meta_schema.items():            
-                self._meta_validators[prop](condition)
+    _failed_expectations.append(failure_info)
 
-        if self._data_schema:
-            # Run all data validators
-            for prop, condition in self._data_schema.items():            
-                self._meta_validators[prop](condition)
-
-        if self.errors['meta'] or self.errors['data'] or self.errors['constraints']:
-            return False
-        else:
-            return True
-            
-    def pprint_errors(self):
-        """ Pretty print the errors detected """
-        if self.dataframe is None:
-            raise Exception('No DataFrame had yet been validated.')
-
-        all_errors = self.errors['meta'] + self.errors['data'] + self.errors['constraints']
-
-        if not all_errors:
-            print('Validation Sucessful: No errors found.')
-        else:
-            print('\nError Report')
-            print('------------')
-            for err_type in ['meta', 'data', 'constraints']: 
-                if self.errors[err_type]:
-                    print('%s:' % err_type)
-                    for err in self.errors[err_type]:
-                        print("    {}:  {}".format(*err))
-
-    def _validate_meta_nrows(self, condition):
-        """ Validate number of rows in the DataFrame """
-        # value to test
-        nrows = self.dataframe.shape[0]
-        self._validate(nrows, condition, schema_type='meta', field='nrows')
- 
-    def _validate_meta_ncols(self, condition):
-        """ Validate number of rows in the DataFrame """
-        # value to test
-        ncols = self.dataframe.shape[1]
-        self._validate(ncols, condition, schema_type='meta', field='ncols')
- 
-    def _validate_meta_columns(self, condition):
-        """ Validate column names in the DataFrame """
-        # value to test
-        columns = self.dataframe.columns.tolist()
-        self._validate(columns, condition, schema_type='meta', field='columns')
-
-    def _validate_meta_index(self, condition):
-        """ Validate row names in the DataFrame """
-        # value to test
-        index = self.dataframe.index.tolist()
-        self._validate(index, condition, schema_type='meta', field='index')
-
-    def _validate_meta_dtypes(self, condition):
-        """ Validate row names in the DataFrame """
-        # value to test
-        dtypes = self.dataframe.dtypes.tolist()
-        dtypes = [str(x) for x in dtypes]
-
-        all_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64', 'category', 'object', 'datetime64[ns]']
-        # value checking
-        for c in condition:
-            if c not in all_dtypes:
-                raise Exception('Unrecognised dtype specified: %s' % c)
-
-        self._validate(dtypes, condition, schema_type='meta', field='index')
-
-    def _validate(self, test_value, condition, schema_type, field):
-        """Internal function to perform validation and store results."""
-        if callable(condition):
-            try:
-                condition(test_value)
-            except (RangeInvalid, MaxInvalid, MinInvalid,
-                    ContainsInvalid, ExcludesInvalid) as err:
-                self.errors[schema_type].append((field, err.args[0]))
-        
-        elif type(condition) in [int, list, tuple]: 
-            if test_value != condition:
-                msg = 'Actual value ({}) != target value ({})'.format(test_value, condition)
-                self.errors[schema_type].append((field, msg))
-
-        else:
-            msg = 'Unexpected type for condition: {}\nAcceptable types are: int, list, tuple or function'
-            raise SchemaConditionError(msg.format(type(condition)))
 
