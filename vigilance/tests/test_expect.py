@@ -32,7 +32,7 @@ def test_expect_tuples(capsys):
     
     check_mylist1([1, 2, 3, 4, 5, 6])
     out, err = capsys.readouterr()
-    assert out == 'All expectations met.'
+    assert out == 'All expectations met.\n'
 
     check_mylist1([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     out, err = capsys.readouterr()
@@ -41,7 +41,7 @@ Failed Expectations: 1
 
 1: File test_expect.py, line 7, in check_mylist1()
     "(len(mylist) <= 10)" is not True
-        -- List should not be bigger than length 10\n\n'''
+        -- List should not be bigger than length 10\n\n\n'''
 
     check_mylist1([1, 2, 3, '4', 5, 6])
     out, err = capsys.readouterr()
@@ -50,7 +50,7 @@ Failed Expectations: 1
 
 1: File test_expect.py, line 8, in check_mylist1()
     "(str not in data_types)" is not True
-        -- List should not contain strings\n\n'''
+        -- List should not contain strings\n\n\n'''
 
 
 def check_mylist2(mylist, clear=True):
@@ -71,7 +71,7 @@ def test_expect_statements(capsys):
 
     check_mylist2([1, 2, 3, 4, 5, 6])
     out, err = capsys.readouterr()
-    assert out == 'All expectations met.'
+    assert out == 'All expectations met.\n'
 
     check_mylist2([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     out, err = capsys.readouterr()
@@ -79,7 +79,7 @@ def test_expect_statements(capsys):
 Failed Expectations: 1
 
 1: File test_expect.py, line 7, in check_mylist2()
-    "(len(mylist) <= 10)" is not True\n\n'''
+    "(len(mylist) <= 10)" is not True\n\n\n'''
 
     check_mylist2([1, 2, 3, '4', 5, 6])
     out, err = capsys.readouterr()
@@ -87,7 +87,7 @@ Failed Expectations: 1
 Failed Expectations: 1
 
 1: File test_expect.py, line 8, in check_mylist2()
-    "(str not in data_types)" is not True\n\n'''
+    "(str not in data_types)" is not True\n\n\n'''
 
 
 
@@ -104,7 +104,7 @@ def test_expect_statement_msg(capsys):
 
     check_mylist3([1, 2, 3, 4, 5, 6])
     out, err = capsys.readouterr()
-    assert out == 'All expectations met.'
+    assert out == 'All expectations met.\n'
 
     check_mylist3([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
     out, err = capsys.readouterr()
@@ -113,7 +113,7 @@ Failed Expectations: 1
 
 1: File test_expect.py, line 4, in check_mylist3()
     "(len(mylist) <= 10)" is not True
-        -- List should not be bigger than length 10\n\n'''
+        -- List should not be bigger than length 10\n\n\n'''
 
 
 def check_mylist4(mylist, clear=True):
@@ -169,7 +169,7 @@ def test_expect_long_example1(capsys):
 
     check_df1(mtcars_df)
     out, err = capsys.readouterr()
-    assert out == 'All expectations met.'
+    assert out == 'All expectations met.\n'
 
     check_df1(mtcars_df2)
     out, err = capsys.readouterr()
@@ -182,7 +182,7 @@ Failed Expectations: 2
 
 2: File test_expect.py, line 10, in check_df1()
     "df.vs.isin([0, 1]).all()" is not True
-        -- Values of vs are not all in set{0,1}\n\n'''
+        -- Values of vs are not all in set{0,1}\n\n\n'''
 
 
 def test_expect_report_failure_flags(capsys):
@@ -212,4 +212,4 @@ Failed Expectations: 2
     assert out is ''
     report_failures()
     out, err = capsys.readouterr()
-    assert out == target
+    assert out == target + '\n'

@@ -147,7 +147,7 @@ def report_failures(error=False, display=True, clear=True):
     if error:
         raise FailedValidationError("\n" + ''.join(output))
     elif display:
-        print(''.join(output), end='')
+        print(''.join(output))
     
     if all_failed_expectations:
         return (''.join(output), all_failed_expectations)
