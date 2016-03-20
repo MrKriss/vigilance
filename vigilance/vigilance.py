@@ -54,6 +54,10 @@ import numpy as np
 _failed_expectations = []
 
 
+class FailedValidationError(Exception):
+    """ Target input has failed one or more validations """
+
+
 def expect(*exprs):
     """Tests given sequence of conditions and stores results.
     
@@ -65,10 +69,9 @@ def expect(*exprs):
     """
 
     # Catch case of only two arguments where one is expr and other is msg
-    if len(exprs) == 2:
-        if isinstance(exprs[0], (bool, np.bool_)) and isinstance(exprs[1], str):
-            if not exprs[0]:
-                _log_failure(arg_num=0, msg=exprs[1])
+    if len(exprs) == 2 and (isinstance(exprs[0], (bool, np.bool_)) and isinstance(exprs[1], str)):
+        if not exprs[0]:
+            _log_failure(arg_num=0, msg=exprs[1])
     else:
         for i, arg in enumerate(exprs):
             if isinstance(arg, (bool, np.bool_)):
@@ -77,19 +80,25 @@ def expect(*exprs):
                     _log_failure(arg_num=i)
             elif isinstance(arg, (list, tuple)):
                 if len(arg) != 2:
-                    raise ValueError('Arguments must be either an expression,'
+                    raise ValueError('Arguments to "expect" are invalid. They must be either an expression,'
                                      ' or a tuple of length two as (expression, error_message)')
                 expr, msg = arg
                 if not expr:
                     _log_failure(arg_num=i, msg=msg)
 
-def report_failures(print=True, clear=False):
+
+def report_failures(error=False, display=True, clear=True):
     """ Print details of logged failures in expect function
+
+    If no failures are detected, None is returned by the function.
 
     Parameters
     ----------
-    print: bool
-        If True, will print the failure report as well as returning it as a string.
+    error:bool
+        If true, will raise an Expectation of type 'FaliedValidationError' instead of printing to console
+    display: bool
+        If True, will print the failure report to console as well as returning it as a string. If 
+        error = True do nothing.
     clear: bool
         If True, all logged failured will be cleared after being reported. 
 
@@ -97,16 +106,28 @@ def report_failures(print=True, clear=False):
     -------
     string 
         The string formated failure report.
-     """
+    list of dict
+        The failed expectations. Each dictionary contains the keys:
+            idx - the number of the failed expectation in the list starting at one, 
+            expression - Code that is evaluated
+            file - the file name where the validation function was defined, 
+            funcname - the name of the validation function, 
+            line - the line of the validation function that the expression was on
+            msg - the error message associated with the expression, if there was one. 
+    """
         
     global _failed_expectations
 
     output = []
 
-    if _failed_expectations:
-        output.append('\nFailed Expectations: %s\n\n' % len(_failed_expectations))
+    # Copy as failures are returned 
+    all_failed_expectations = _failed_expectations[:]
 
-        for i, failure in enumerate(_failed_expectations, start=1):
+    if all_failed_expectations:
+
+        output.append('\nFailed Expectations: %s\n\n' % len(all_failed_expectations))
+
+        for i, failure in enumerate(all_failed_expectations, start=1):
 
             report_line = '{idx}: File {file}, line {line}, in {funcname}()\n    "{expression}" is not True\n'
 
@@ -121,11 +142,17 @@ def report_failures(print=True, clear=False):
         if clear:
             _failed_expectations = []
     else:
-        print("All Expectations Met.")
+        output.append("All expectations met.")
 
-    print(''.join(output))
-
-    return ''.join(output)
+    if error:
+        raise FailedValidationError("\n" + ''.join(output))
+    elif display:
+        print(''.join(output), end='')
+    
+    if all_failed_expectations:
+        return (''.join(output), all_failed_expectations)
+    else:
+        return None
 
 
 def _log_failure(arg_num, msg=None):
@@ -141,9 +168,9 @@ def _log_failure(arg_num, msg=None):
     # we're only interested in the first 4. 
     frame,  filename, file_lineno, funcname = inspect.stack()[2][:4]
     # Note that a frame object should be deleted once used to be safe and stop possible 
-    # memory leak due to circular referencing 
+    # memory leak from circular referencing 
     try:
-        frame_source_lines, frame_start_lineno = (inspect.getsourcelines(frame))  # do something with the frame
+        frame_source_lines, frame_start_lineno = (inspect.getsourcelines(frame)) 
     finally:
         del frame
 

@@ -27,6 +27,7 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
+htmlcov/
 
 # Translations
 *.mo
@@ -39,3 +40,10 @@ nosetests.xml
 # Project Files 
 *.sublime-project
 *.sublime-workspace
+
+# Caches
+.cache/
+**/.ipynb_checkpoints/
+
+demo/
+archive/
