@@ -110,12 +110,12 @@ For brevity, the message strings can be omitted and the ``expect`` function will
 Features
 ^^^^^^^^
 
-    - Delayed assertions with options to print to console or raise a ValueError upon a call to ``report_failures``.
-    - Helper utility functions to confirm the following conditions:
+- Delayed assertions with options to print to console or raise a ValueError upon a call to ``report_failures``.
+- Helper utility functions to confirm the following conditions:
 
-        + ``within_n_sds()`` Tests all values in a column are with a given number of standard deviations.
-        + ``within_n_mads()`` Tests all values in a column are with a given number of median absolute deviations.
-        + ``maha_dist()`` Computes the average `mahalanobis distance`_ for each row in the data set, which is a multivariate version of calculating how many standard deviations a value is from the mean. Larger values are indicative of potential outliers in the data. 
+    + ``within_n_sds()`` Tests all values in a column are with a given number of standard deviations.
+    + ``within_n_mads()`` Tests all values in a column are with a given number of median absolute deviations.
+    + ``maha_dist()`` Computes the average `mahalanobis distance`_ for each row in the data set, which is a multivariate version of calculating how many standard deviations a value is from the mean. Larger values are indicative of potential outliers in the data. 
                             
 .. _mahalanobis distance: https://en.wikipedia.org/wiki/Mahalanobis_distance
 
