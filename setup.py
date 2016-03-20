@@ -13,7 +13,7 @@ setuptools.setup(
 
     packages=setuptools.find_packages(),
 
-    install_requires=['pandas'],
+    install_requires=['pandas', 'decorator'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest', 'future'],
 
