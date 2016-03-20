@@ -1,13 +1,15 @@
 ''' Tests for the expect function that impliments delayed assertion.
 
 '''
-import os 
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
+from builtins import *
 
+import os 
 import pandas as pd 
+import pytest
 
 from vigilance import maha_dist, within_n_mads, within_n_sds, expect, report_failures, FailedValidationError
-
-import pytest
 
 
 # Simple Examples
