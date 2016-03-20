@@ -2,13 +2,13 @@ import setuptools
 
 setuptools.setup(
     name="vigilance",
-    version="0.0.1",
+    version="0.1",
     url="https://github.com/MrKriss/vigilance",
 
     author="Chris Musselle",
     author_email="chris.j.musselle@gmail.com",
 
-    description="A schema definition and validation framework for pandas DataFrames",
+    description="A simple data validation approach for testing assumptions about pandas DataFrames in Python.",
     long_description=open('README.rst').read(),
 
     packages=setuptools.find_packages(),
