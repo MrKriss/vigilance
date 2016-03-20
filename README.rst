@@ -14,94 +14,110 @@ vigilance
     :alt: Latest code coverage status from Coveralls.io
 
 
-A schema definition and validation framework for pandas DataFrames.
+A simple data validation approach inspired by `assertR`_ for testing assumptions about pandas DataFrames in Python.
 
-Usage
------
+.. _assertR: https://cran.r-project.org/web/packages/assertr/vignettes/assertr.html     
 
-Vigilance provides a Validator class that allows you to specify constraints on the properties of a pandas DataFrame object and then test against them. These constraints are specified as dictionary schemas relating to either the: 
+Use Case
+--------
 
-* Meta data of the DataFrame (number of rows/columns, index types, memory size, etc.) 
-* Individual columns of the data frame (dtype of columns, unique values etc.)
-* Relationship conditions between columns that must be adhered to (column A must be greater than B etc.) 
+This package provides a structured way of testing assumptions about attributes of a Python object, and is specifically aimed at verifying the attributes and values contained within a pandas DataFrame. 
 
-As an example we will use the following two simple DataFrames. 
+The DataFrame object is very versatile, but it can be helpful to verify certain values of its attributes and the data it contains in an analysis piece. This could be to ensure data types are correct for the operations performed, or to guard against data errors by checking that the data held is still within certain bounds once the input source of the data has changed.  
 
-.. code-block:: python
-
-    df_num1 = pd.DataFrame({'A': np.random.randn(10), 'B': np.random.randn(10) - 5,
-                            'C': np.random.randn(10) + 10})
-    df_num2 = pd.DataFrame({'A': np.random.randn(20), 'B': np.random.randn(20) - 5,
-                            'C': np.random.randn(20) + 10})
-
-To specify a schema that provides a constrain on the number of rows we can write. 
+One simple way to check attributes of a DataFrame is to write a custom checking function and use ``assert`` to test for particular properties. e.g.
 
 .. code-block:: python
 
-    >>> from vigilance import Validator
-    >>> v = Validator(meta_schema={'nrows': 10})
+    def check_df(df):
+        """ My custom validator """    
+        assert len(df) > 10, "Num rows must be greater than 10"
+        assert (df.mpg > 0).all(), "Not all values in mpg are over 0"
+        assert (df.am.isin([0, 1]).all(), "Values of am are not all in set{0,1}"
 
-This is then tested against a DataFrame with:
-
-.. code-block:: python
-
-    >>> valid = v.is_valid(df_num1)
-    >>> print(valid)
-    True
-    >>> valid = v.is_valid(df_num2)
-    >>> print(valid)
-    False
-
-If the validation failed, details of any errors found can be nicely displayed by calling ``v.pprint_errors``.
-
-.. code-block:: python
-
-    >>> v = Validator(meta_schema={'nrows': 5})
-    >>> valid = v.is_valid(df_num1)
-    >>> v.pprint_errors()
-
-    Error Report
-    ------------
-    meta:
-        nrows:  Actual value (10) != target value (5)
+    check_df(df)
 
 
-As specifying exact values for the constraints can often be too limiting, the functions ``Range``, ``Min`` and ``Max`` are provided to set bounds on these values. 
+Though such usage has one main disadvantage; it will error on the first failure encountered, and so lead to an iterative trial and error approach to fixing problems if multiple assertions fail. 
+
+The vigilance package provides the ``expect`` function, which operates like ``assert`` but instead of imediatly raising an error, it stores all failed expectations encountered and then allows them to be recalled at a later point with the ``report_failures`` function.
+
+A validating function like the above can thus be written as follows:
 
 .. code-block:: python
 
-    >>> from vigilance import Validator
-    >>> v = Validator(meta_schema={'nrows': Range(5, 15)})
-    >>> valid = v.is_valid(df_num1)
-    >>> print(valid)
-    True
-    >>> valid = v.is_valid(df_num2)
-    >>> print(valid)
-    False
-    >>> v.pprint_errors()
+    from vigilance import expect, report_failures
 
-    Error Report
-    ------------
-    meta:
-        nrows:  value must be at most 15
+    def check_df(df):
+        """ My custom validator """    
+        expect(
+            (len(df) > 10, "Num rows must be greater than 10"),
+            ((df.mpg > 0).all(), "Not all values in mpg are over 0"),
+            (df.am.isin([0, 1]).all(), "Values of am are not all in set{0,1}")
+        )
+        report_failures()
+
+Given some sample data, using the mtcars data set from R,
+
+.. code-block:: python
+
+    mtcars = pd.read_csv('https://vincentarelbundock.github.io/Rdatasets/csv/datasets/mtcars.csv')
+    invalid_mtcars = mtcars.copy()
+    invalid_mtcars.ix[10, 'mpg'] = 999
+    invalid_mtcars.ix[22, 'am'] = 2
+
+
+the following output reports are generated.
+
+.. code-block:: python
+
+    >>> check_df(mtcars)
+    All expectations met.
+
+
+.. code-block:: python
+
+    >>> check_df(invalid_mtcars)
+
+    Failed Expectations: 2
+
+    1: File <filename>, line 5, in check_df()
+        "(df.mpg > 0).all()" is not True
+            -- Not all values in mpg are over 0
+
+    2: File <filename>, line 6, in check_df()
+        "df.am.isin([0, 1]).all()" is not True
+            -- Values of am are not all in set{0,1}
+
+
+For brevity, the message strings can be omitted and the ``expect`` function will accept a variable number of arguments as statements to evaluate.   
+
+.. code-block:: python
+
+    def check_df(df):
+        """ Validator for mtcars """    
+        
+        expect(
+            len(df) > 10, 
+            (df.mpg > 0).all(),
+            (df.vs.isin([0, 1]).all(),
+            (df.am.isin([0, 1]).all()
+        )
+        
+        report_failures()
+
 
 Features
 ^^^^^^^^
 
-So far the list of DataFrame properties to test against, and their expected values are:
+    - Delayed assertions with options to print to console or raise a ValueError upon a call to ``report_failures``.
+    - Helper utility functions to confirm the following conditions:
 
-* Meta Data:
-    - 'nrows' (int)
-    - 'ncols' (int)
-    - 'columns' (sequence)
-    - 'index' (sequece)
-    - 'dtypes' (sequence)
-      
-When testing these properties, the following utility functions can be used to specify more lenient constraints.
-
-* ``Range``, ``Max``, ``Min``: Restrict an integer or float value with an upper or lower bound or both. 
-* ``Contains``, ``Excludes``: Specify elements in a sequence that must/must not be present. Uses set operations.
-* ``Contains([sequence], only=True)``: Specify that only the values given are allowed to be present and must be present.  
+        + ``within_n_sds()`` Tests all values in a column are with a given number of standard deviations.
+        + ``within_n_mads()`` Tests all values in a column are with a given number of median absolute deviations.
+        + ``maha_dist()`` Computes the average `mahalanobis distance`_ for each row in the data set, which is a multivariate version of calculating how many standard deviations a value is from the mean. Larger values are indicative of potential outliers in the data. 
+                            
+.. _mahalanobis distance: https://en.wikipedia.org/wiki/Mahalanobis_distance
 
 
 Installation
@@ -122,7 +138,7 @@ In addition, `pytest <https://pytest.org/latest/index.html>`_  is used to run th
 Compatibility
 -------------
 
-Written for Python 3 but with Python 2.x support via the `future <http://python-future.org/>`_ package. Tested on Python 2.7, as well as 3.3, 3.4 and 3.5.
+Written for Python 3 but with Python 2.x support via the `future <http://python-future.org/>`_ package. Tested on Python 2.7, as well as 3.3 and 3.4. 
 
 Licence
 -------
