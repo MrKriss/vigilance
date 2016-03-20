@@ -138,7 +138,7 @@ In addition, `pytest <https://pytest.org/latest/index.html>`_  is used to run th
 Compatibility
 -------------
 
-Written for Python 3 but with Python 2.x support via the `future <http://python-future.org/>`_ package. Tested on Python 2.7, as well as 3.3 and 3.4. 
+Tested on Python 3.3 and 3.4. 
 
 Licence
 -------
